@@ -1,5 +1,5 @@
-# YBPDE
- > **Y**OURLS **B**etter **P**eerTube **D**iscord **E**mbeds
+# YBPVE
+ > **Y**OURLS **B**etter **P**eerTube **V**ideo **E**mbeds
 
  Provides several Meta Tags and Data for Discord and othe Site Scrapers to correctly Embed Videos from PeerTube instances.
 
