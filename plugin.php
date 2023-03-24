@@ -50,8 +50,10 @@ function spikey_discord_peertubemeta($args) {
 
         // To let it show correctly in Discord
         $oembed = "https://embedl.ink/api/oembed?provider_name=" . $site_name . "&provider_url=" . $base_url . "&author_name=" . $author_name . "&author_url=" . $author_url;
+        header('Content-Type: text/html',true,200);
         ?>
-            <html>
+            <!DOCTYPE html>
+            <html lang="en">
                 <head>
                     <title><?php echo $title . " - " . $site_name; ?></title>
                     <link type="application/json+oembed" href="<?php echo $oembed ?>">
