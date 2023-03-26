@@ -10,11 +10,32 @@ LICENSE: MIT License
 Support: https://spikey.biz/discord
 Donate: https://spikey.biz/kofi
 */
-define("PTV_DELAY", "5");
+
+if (!defined('PTV_DELAY')) {
+    define("PTV_DELAY", "5");
+}
+
 yourls_add_action('pre_redirect','spikey_discord_peertubemeta');
 
 function spikey_discord_peertubemeta($args) {
     $url = $args[0];
+
+    // Get User Agent
+    $agent = $_SERVER["HTTP_USER_AGENT"];
+
+    // Check if it is a bot or site scraper.
+    if (strpos($agent, "facebookexternalhit/") !== false || strpos($agent, "bot") !== false || strpos($agent, "Tool") !== false) {
+        // Do nothing
+    } else {
+        die();
+    }
+
+    $status = getUrlSatusCode($url);
+    echo "\n$status\n";
+    if ($status <= 199 && $status >= 400) {
+        die();
+    }
+
     $url2 = parse_url($url, PHP_URL_SCHEME).'://'.parse_url($url, PHP_URL_HOST);
     $base_url = trim($url2, '/');
     
@@ -22,17 +43,9 @@ function spikey_discord_peertubemeta($args) {
     $og = fetch_og($url);
     $platform = $og['platform'];
     $type = $og['type'];
-    // Get User Agent
-    $agent = $_SERVER["HTTP_USER_AGENT"];
-
-    // Check if it is a bot or site scraper.
-    $is_bot = false;
-    if (strpos($agent, "facebookexternalhit/") !== false || strpos($agent, "bot") !== false || strpos($agent, "Tool") !== false) {
-        $is_bot = true;
-    }
 
     // Check if it is a PeerTube Video
-    if ($platform == "PeerTube" && $type == "video" && $is_bot ) {
+    if ($platform == "PeerTube" && $type == "video") {
         // Fetch rest Meta
         $twitter = fetch_twitter($url);
         $metas = get_meta_tags($url);
@@ -50,7 +63,6 @@ function spikey_discord_peertubemeta($args) {
 
         // To let it show correctly in Discord
         $oembed = "https://embedl.ink/api/oembed?provider_name=" . $site_name . "&provider_url=" . $base_url . "&author_name=" . $author_name . "&author_url=" . $author_url;
-        header('Content-Type: text/html',true,200);
         ?>
             <!DOCTYPE html>
             <html lang="en">
@@ -76,7 +88,8 @@ function spikey_discord_peertubemeta($args) {
                     <!-- Twitter Card -->
                     <meta property="twitter:card" content="player"/>
                     <meta property="twitter:title" content="<?php echo $twitter['title']; ?>"/>
-                    <meta property="twitter:site" content="<?php echo $twitter['site']; ?>"/>
+                    <!-- <meta property="twitter:site" content="<?php echo $twitter['site']; ?>"/> -->
+                    <meta property="twitter:site" content="<?php echo "@" . $author_name; ?>"/>
                     <meta property="twitter:description" content="<?php echo $twitter['description']; ?>"/>
                     <meta property="twitter:image" content="<?php echo $twitter['image']; ?>"/>
                     <meta property="twitter:player" content="<?php echo $og['video:url']; ?>"/>
@@ -156,4 +169,17 @@ function fetch_twitter($url) {
     }
 
     return $twitter;
+}
+
+function getUrlSatusCode($url, $timeout = 10) {
+    $ch = curl_init();
+    $opts = array(CURLOPT_RETURNTRANSFER => true, // do not output to browser
+    CURLOPT_URL => $url,
+    CURLOPT_NOBODY => true, // do a HEAD request only
+    CURLOPT_TIMEOUT => $timeout);
+    curl_setopt_array($ch, $opts);
+    curl_exec($ch);
+    $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    return $status;
 }
